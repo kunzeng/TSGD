@@ -1,6 +1,6 @@
 ## TAdam
 
-The Pytorch implementation of TAdam algorithm in：'Scaling transition from SGDM to plain SGD'
+The Pytorch implementation of TSGD algorithm in：'Scaling transition from SGDM to plain SGD'
 [https://arxiv.org/abs/2106.06749](https://arxiv.org/abs/2106.06753)
 
 ### Usage
