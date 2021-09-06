@@ -17,7 +17,7 @@ from tsgd import TSGD
 optimizer = TSGD(model.parameters(), iters=required, lr=required)
 
 #iters(int, required): iterations
-#	iters = (testSampleSize / batchSize) * epoch
+#	iters = math.ceil(test_size / batch_size) * epochs
 ```
 
 
