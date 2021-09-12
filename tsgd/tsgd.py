@@ -27,7 +27,7 @@ class TSGD(Optimizer):
     """
 
     def __init__(self, params, lr=required, iters=required, momentum=0.9, 
-                 dampening=0, weight_decay=0, nesterov=False, coeff=1e-4):
+                 dampening=0, weight_decay=0, nesterov=False, coeff=1e-2):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 1 <= iters:
