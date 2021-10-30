@@ -27,23 +27,25 @@ class TSGD(Optimizer):
     """
 
     def __init__(self, params, iters=required, momentum=0.9, 
-                 dampening=0, weight_decay=0, nesterov=False, up_lr=0.5, low_lr=0.005, coeff=1e-2):
+                 dampening=0, weight_decay=0, nesterov=False, up_lr=5e-1, low_lr=5e-3, coeff1=1e-2, coeff2=5e-4):
         if not 1 <= iters:
             raise ValueError("Invalid iters: {}".format(iters))             
         if momentum <= 0.0:
             raise ValueError("Invalid momentum value: {}".format(momentum))
         if weight_decay < 0.0:
             raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
-        if not 0.0 <= coeff <= 1.0:
-            raise ValueError("Invalid coeff: {}".format(coeff))                    
-         if not 0.0 <= up_lr:
+        if not 0.0 <= coeff1 <= 1.0:
+            raise ValueError("Invalid coeff: {}".format(coeff1))            
+        if not 0.0 <= coeff2 <= 1.0:
+            raise ValueError("Invalid coeff: {}".format(coeff2))                      
+        if not 0.0 <= up_lr:
             raise ValueError("Invalid up learning rate: {}".format(up_lr))
         if not 0.0 <= low_lr:
             raise ValueError("Invalid low learning rate: {}".format(low_lr))            
         if not low_lr <= up_lr:
             raise ValueError("required up_lr  >= low_lr, but (up_lr = {}, low_lr = {})".format(up_lr, low_lr))                  
         defaults = dict(iters=iters, momentum=momentum, dampening=dampening, weight_decay=weight_decay,
-                        nesterov=nesterov, coeff=coeff)
+                        nesterov=nesterov, up_lr=up_lr, low_lr=low_lr,coeff1=coeff1, coeff2=coeff2)
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
             
@@ -55,7 +57,7 @@ class TSGD(Optimizer):
         for group in self.param_groups:
             group.setdefault('nesterov', False)
 
-    def step(self, epoch, closure=None):
+    def step(self, closure=None):
         """Performs a single optimization step.
 
         Arguments:
@@ -72,12 +74,13 @@ class TSGD(Optimizer):
             momentum = group['momentum']
             dampening = group['dampening']
             nesterov = group['nesterov']
-            coeff = group['coeff']
+            coeff1 = group['coeff1']
+            coeff2 = group['coeff2']
             iters = group['iters']
             up_lr = group['up_lr']
             low_lr = group['low_lr']
-            rho1 = 10 ** (math.log(coeff, 10) / iters)
-            rho2 = 10 ** (math.log(low_lr*1e-1,10) / iters)
+            rho1 = 10 ** (math.log(coeff1, 10) / iters)
+            rho2 = 10 ** (math.log(coeff2,10) / iters)
 
             for p in group['params']:
                 if p.grad is None:
