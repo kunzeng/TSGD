@@ -26,10 +26,8 @@ class TSGD(Optimizer):
        
     """
 
-    def __init__(self, params, lr=required, iters=required, momentum=0.9, 
-                 dampening=0, weight_decay=0, nesterov=False, coeff=1e-2):
-        if lr is not required and lr < 0.0:
-            raise ValueError("Invalid learning rate: {}".format(lr))
+    def __init__(self, params, iters=required, momentum=0.9, 
+                 dampening=0, weight_decay=0, nesterov=False, up_lr=0.5, low_lr=0.005, coeff=1e-2):
         if not 1 <= iters:
             raise ValueError("Invalid iters: {}".format(iters))             
         if momentum <= 0.0:
@@ -38,8 +36,13 @@ class TSGD(Optimizer):
             raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
         if not 0.0 <= coeff <= 1.0:
             raise ValueError("Invalid coeff: {}".format(coeff))                    
-            
-        defaults = dict(lr=lr, iters=iters, momentum=momentum, dampening=dampening, weight_decay=weight_decay,
+         if not 0.0 <= up_lr:
+            raise ValueError("Invalid up learning rate: {}".format(up_lr))
+        if not 0.0 <= low_lr:
+            raise ValueError("Invalid low learning rate: {}".format(low_lr))            
+        if not low_lr <= up_lr:
+            raise ValueError("required up_lr  >= low_lr, but (up_lr = {}, low_lr = {})".format(up_lr, low_lr))                  
+        defaults = dict(iters=iters, momentum=momentum, dampening=dampening, weight_decay=weight_decay,
                         nesterov=nesterov, coeff=coeff)
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
@@ -71,7 +74,10 @@ class TSGD(Optimizer):
             nesterov = group['nesterov']
             coeff = group['coeff']
             iters = group['iters']
-            rho = 10 ** (math.log(coeff, 10) / iters)
+            up_lr = group['up_lr']
+            low_lr = group['low_lr']
+            rho1 = 10 ** (math.log(coeff, 10) / iters)
+            rho2 = 10 ** (math.log(low_lr*1e-1,10) / iters)
 
             for p in group['params']:
                 if p.grad is None:
@@ -94,8 +100,8 @@ class TSGD(Optimizer):
                         d_p = d_p.add(momentum, buf)
                     
                 #Scaling the momentum
-                d_p = (buf - d_p) * (rho ** param_state['step']) + d_p   
-                
-                p.data.add_(d_p, alpha=-group['lr'])
+                d_p = (buf - d_p) * (rho1 ** param_state['step']) + d_p   
+                lr = ((up_lr - low_lr) * rho2 ** param_state['step'] + low_lr) * (1 - rho2 ** param_state['step'])
+                p.data.add_(d_p, alpha=-lr)
                 
         return loss
